@@ -1,8 +1,6 @@
 import { categories, db, isDatabaseAvailable, productImages, products } from "@/lib/db"
-import { trace } from "@opentelemetry/api"
+import { tracer } from "@/lib/tracing"
 import { and, asc, desc, eq, ilike, inArray } from "drizzle-orm"
-
-const tracer = trace.getTracer('elite-store')
 
 export interface Product {
   id: number

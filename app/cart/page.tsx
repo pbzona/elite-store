@@ -1,26 +1,29 @@
-"use client"
-
+import { getCurrentUser } from "@/lib/auth"
+import { getCart, getOrCreateCart } from "@/lib/cart"
+import { CartItemControls } from "@/components/cart/cart-item-controls"
+import { ClearCartButton } from "@/components/cart/clear-cart-button"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Minus, X, ShoppingCart } from "lucide-react"
-import { useCart } from "@/hooks/use-cart"
+import { ShoppingCart } from "lucide-react"
 import { Icon } from "@/lib/icons"
 import Link from "next/link"
+import { cookies } from "next/headers"
 
-export default function CartPage() {
-  const { cart, loading, updateQuantity, removeFromCart, clearCart } = useCart()
+export default async function CartPage() {
+  const user = await getCurrentUser()
+  const cookieStore = await cookies()
+  const sessionId = cookieStore.get("cart-session-id")?.value
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
+  let cart = null
+  if (user || sessionId) {
+    try {
+      const cartId = await getOrCreateCart(sessionId)
+      cart = await getCart(cartId)
+    } catch (error) {
+      console.error("Failed to fetch cart:", error)
+    }
   }
 
   const itemCount = cart?.itemCount || 0
@@ -56,19 +59,11 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Cart Items</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearCart}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  Clear Cart
-                </Button>
+                <ClearCartButton />
               </div>
 
               {cart.items.map((item) => {
                 const rgbColor = `rgb(${item.product.r}, ${item.product.g}, ${item.product.b})`
-                const primaryImage = item.product.images[0]
                 const itemTotal = Number.parseFloat(item.product.price) * item.quantity
 
                 return (
@@ -85,7 +80,7 @@ export default function CartPage() {
                         </div>
 
                         <div className="flex-1">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between mb-4">
                             <div>
                               <h3 className="font-semibold text-lg mb-1">
                                 <Link
@@ -100,38 +95,15 @@ export default function CartPage() {
                               </p>
                               <p className="text-lg font-semibold">${item.product.price}</p>
                             </div>
-
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-muted-foreground hover:text-destructive"
-                              onClick={() => removeFromCart(item.productId)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
                           </div>
 
-                          <div className="flex items-center justify-between mt-4">
-                            <div className="flex items-center gap-3">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-9 w-9 p-0 bg-transparent"
-                                onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="text-lg font-medium w-12 text-center">{item.quantity}</span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-9 w-9 p-0 bg-transparent"
-                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-
+                          <div className="flex items-center justify-between">
+                            <CartItemControls
+                              productId={item.productId}
+                              productName={item.product.name}
+                              currentQuantity={item.quantity}
+                              maxQuantity={item.product.inventory}
+                            />
                             <div className="text-right">
                               <p className="text-lg font-semibold">${itemTotal.toFixed(2)}</p>
                             </div>

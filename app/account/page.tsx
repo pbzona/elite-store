@@ -1,83 +1,19 @@
-"use client"
-
-import type React from "react"
-
-import { useEffect, useState } from "react"
+import { getCurrentUser } from "@/lib/auth"
+import { AccountFormClient } from "@/components/account/account-form-client"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/hooks/use-auth"
-import { toast } from "sonner"
-import { User, Palette, Save } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { User, Palette } from "lucide-react"
+import { redirect } from "next/navigation"
+import Link from "next/link"
 
-export default function AccountPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-  })
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login")
-      return
-    }
-
-    if (user) {
-      setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      })
-    }
-  }, [user, loading, router])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-
-    try {
-      // This would be implemented with an API route
-      toast.success("Profile updated", {
-        description: "Your profile has been successfully updated.",
-      })
-    } catch (error) {
-      toast.error("Update failed", {
-        description: "There was an error updating your profile.",
-      })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
-  }
+export default async function AccountPage() {
+  const user = await getCurrentUser()
 
   if (!user) {
-    return null
+    redirect("/login")
   }
 
   const rgbColor = `rgb(${user.affinityR}, ${user.affinityG}, ${user.affinityB})`
@@ -104,39 +40,7 @@ export default function AccountPage() {
                 <CardDescription>Update your personal information</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First name</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last name</Label>
-                      <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={saving}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
+                <AccountFormClient user={user} />
               </CardContent>
             </Card>
           </div>
@@ -203,13 +107,13 @@ export default function AccountPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button variant="outline" className="w-full justify-start bg-transparent" asChild>
-                  <a href="/orders">View Order History</a>
+                  <Link href="/orders">View Order History</Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start bg-transparent" asChild>
-                  <a href="/cart">View Shopping Cart</a>
+                  <Link href="/cart">View Shopping Cart</Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start bg-transparent" asChild>
-                  <a href="/products">Browse Products</a>
+                  <Link href="/products">Browse Products</Link>
                 </Button>
               </CardContent>
             </Card>

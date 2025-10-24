@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createUser, generateToken } from "@/lib/auth"
 import { db, users } from "@/lib/db"
+import { tracer } from "@/lib/tracing"
 import { eq } from "drizzle-orm"
 
 export async function POST(request: NextRequest) {
+  const span = tracer.startSpan('api.auth.register')
+
   try {
     const { email, password, firstName, lastName } = await request.json()
 
@@ -12,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const [existingUser] = await db.select().from(users).where(eq(users.email, email))
+    const [existingUser] = await db!.select().from(users).where(eq(users.email, email))
 
     if (existingUser) {
       return NextResponse.json({ error: "User already exists" }, { status: 409 })
@@ -47,5 +50,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Registration error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } finally {
+    span.end()
   }
 }

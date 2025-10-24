@@ -1,80 +1,38 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { getCurrentUser } from "@/lib/auth"
+import { getOrderById } from "@/lib/orders"
+import { getStatusColor } from "@/lib/order-utils"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/hooks/use-auth"
-import type { Order } from "@/lib/orders"
 import Link from "next/link"
 import { Package, CreditCard, MapPin, ArrowLeft, CheckCircle } from "lucide-react"
 import { Icon } from "@/lib/icons"
+import { redirect, notFound } from "next/navigation"
 
-export default function OrderDetailsPage() {
-  const { user, loading: authLoading } = useAuth()
-  const [order, setOrder] = useState<Order | null>(null)
-  const [loading, setLoading] = useState(true)
-  const params = useParams()
-  const router = useRouter()
+interface OrderDetailsPageProps {
+  params: Promise<{ id: string }>
+}
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login")
-      return
-    }
+export default async function OrderDetailsPage({ params }: OrderDetailsPageProps) {
+  const user = await getCurrentUser()
 
-    if (user && params.id) {
-      fetchOrder(params.id as string)
-    }
-  }, [user, authLoading, params.id, router])
-
-  const fetchOrder = async (orderId: string) => {
-    try {
-      const response = await fetch(`/api/orders/${orderId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setOrder(data)
-      } else if (response.status === 404) {
-        router.push("/orders")
-      }
-    } catch (error) {
-      console.error("Failed to fetch order:", error)
-    } finally {
-      setLoading(false)
-    }
+  if (!user) {
+    redirect("/login")
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-[var(--success-light)] text-[var(--success)] border-[var(--success)]"
-      case "pending":
-        return "bg-[var(--warning-light)] text-[var(--warning)] border-[var(--warning)]"
-      case "shipped":
-        return "bg-[var(--info-light)] text-[var(--info)] border-[var(--info)]"
-      case "delivered":
-        return "bg-[var(--purple-light)] text-[var(--purple)] border-[var(--purple)]"
-      default:
-        return "bg-muted text-muted-foreground border-muted"
+  const { id } = await params
+
+  let order
+  try {
+    order = await getOrderById(id)
+    // Verify the order belongs to the current user
+    if (order.userId !== user.id) {
+      notFound()
     }
-  }
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user || !order) {
-    return null
+  } catch (error) {
+    notFound()
   }
 
   return (
@@ -95,7 +53,7 @@ export default function OrderDetailsPage() {
               <h1 className="text-3xl font-bold mb-2">Order {order.orderNumber}</h1>
               <p className="text-muted-foreground">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
             </div>
-            <Badge className={getStatusColor(order.status)} size="lg">
+            <Badge className={getStatusColor(order.status)}>
               {order.status.toUpperCase()}
             </Badge>
           </div>

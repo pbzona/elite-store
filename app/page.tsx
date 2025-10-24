@@ -1,7 +1,5 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import type { Product, Category } from "@/lib/products"
+import { getProducts, getCategories } from "@/lib/products"
 import { ProductGrid } from "@/components/product/product-grid"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
@@ -10,44 +8,10 @@ import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { Icon } from "@/lib/icons"
 
-export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          fetch("/api/products?featured=true&limit=8"),
-          fetch("/api/categories"),
-        ])
-
-        const products = await productsRes.json()
-        const cats = await categoriesRes.json()
-
-        setFeaturedProducts(products)
-        setCategories(cats)
-      } catch (error) {
-        console.error("Failed to fetch data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
-  }
+export default async function HomePage() {
+  // Fetch data server-side
+  const featuredProducts = await getProducts({ featured: true, limit: 8 })
+  const categories = await getCategories()
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getProducts } from "@/lib/products"
+import { tracer } from "@/lib/tracing"
 
 export async function GET(request: NextRequest) {
+  const span = tracer.startSpan('api.products.list')
+
   try {
     const { searchParams } = new URL(request.url)
     const categoryId = searchParams.get("categoryId")
@@ -22,5 +25,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Products API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } finally {
+    span.end()
   }
 }

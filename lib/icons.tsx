@@ -3,8 +3,10 @@ import type { LucideProps } from "lucide-react"
 
 type IconName = keyof typeof LucideIcons
 
-interface IconProps extends Omit<LucideProps, "ref"> {
+interface IconProps {
   name?: string | null
+  className?: string
+  size?: string | number
 }
 
 export function Icon({ name, ...props }: IconProps) {

@@ -1,12 +1,12 @@
 import { db, users } from "@/lib/db"
-import { SpanStatusCode, trace } from "@opentelemetry/api"
+import { tracer } from "@/lib/tracing"
+import { SpanStatusCode } from "@opentelemetry/api"
 import bcrypt from "bcryptjs"
 import { eq } from "drizzle-orm"
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
-const tracer = trace.getTracer('elite-store')
 
 export interface User {
   id: string

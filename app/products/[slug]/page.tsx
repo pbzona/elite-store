@@ -1,73 +1,29 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
 import type { Product } from "@/lib/products"
+import { getProductBySlug } from "@/lib/products"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import Image from "next/image"
+import { AddToCartButton } from "@/components/product/add-to-cart-button"
 import Link from "next/link"
-import { ArrowLeft, ShoppingCart, Heart, Share2 } from "lucide-react"
+import { ArrowLeft, Heart, Share2 } from "lucide-react"
 import { Icon } from "@/lib/icons"
+import { notFound } from "next/navigation"
 
-export default function ProductPage() {
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const params = useParams()
+interface ProductPageProps {
+  params: Promise<{ slug: string }>
+}
 
-  useEffect(() => {
-    if (params.slug) {
-      fetchProduct(params.slug as string)
-    }
-  }, [params.slug])
-
-  const fetchProduct = async (slug: string) => {
-    try {
-      const response = await fetch(`/api/products/${slug}`)
-      if (response.ok) {
-        const data = await response.json()
-        setProduct(data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch product:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
-  }
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { slug } = await params
+  const product = await getProductBySlug(slug)
 
   if (!product) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-            <Button asChild>
-              <Link href="/products">Browse Products</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
+    notFound()
   }
 
   const rgbColor = `rgb(${product.r}, ${product.g}, ${product.b})`
-  const primaryImage = product.images[selectedImageIndex] || product.images[0]
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,16 +108,13 @@ export default function ProductPage() {
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button
+              <AddToCartButton
+                productId={product.id}
+                productName={product.name}
+                quantity={1}
                 size="lg"
                 className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white"
-                style={{
-                  boxShadow: `0 4px 20px ${rgbColor}20`,
-                }}
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
-              </Button>
+              />
               <Button size="lg" variant="outline">
                 <Heart className="h-5 w-5" />
               </Button>

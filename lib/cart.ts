@@ -1,9 +1,8 @@
 import { getCurrentUser } from "@/lib/auth"
 import { cartItems, carts, db, productImages, products } from "@/lib/db"
-import { SpanStatusCode, trace } from "@opentelemetry/api"
+import { tracer } from "@/lib/tracing"
+import { SpanStatusCode } from "@opentelemetry/api"
 import { and, desc, eq } from "drizzle-orm"
-
-const tracer = trace.getTracer('elite-store')
 
 export interface CartItem {
   id: number

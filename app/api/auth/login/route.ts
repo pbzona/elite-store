@@ -1,7 +1,10 @@
 import { authenticateUser, generateToken } from "@/lib/auth"
+import { tracer } from "@/lib/tracing"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
+  const span = tracer.startSpan('api.auth.login')
+
   try {
     const { email, password } = await request.json()
 
@@ -29,5 +32,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Login error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } finally {
+    span.end()
   }
 }

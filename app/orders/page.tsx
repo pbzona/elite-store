@@ -1,77 +1,23 @@
-"use client"
-
-import { useEffect, useState } from "react"
+import { getCurrentUser } from "@/lib/auth"
+import { getUserOrders } from "@/lib/orders"
+import { getStatusColor } from "@/lib/order-utils"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/hooks/use-auth"
-import type { Order } from "@/lib/orders"
 import Link from "next/link"
 import { Package, Calendar, CreditCard } from "lucide-react"
 import { Icon } from "@/lib/icons"
-import { useRouter } from "next/navigation"
+import { redirect } from "next/navigation"
 
-export default function OrdersPage() {
-  const { user, loading: authLoading } = useAuth()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login")
-      return
-    }
-
-    if (user) {
-      fetchOrders()
-    }
-  }, [user, authLoading, router])
-
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch("/api/orders")
-      if (response.ok) {
-        const data = await response.json()
-        setOrders(data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch orders:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-[var(--success-light)] text-[var(--success)] border-[var(--success)]"
-      case "pending":
-        return "bg-[var(--warning-light)] text-[var(--warning)] border-[var(--warning)]"
-      case "shipped":
-        return "bg-[var(--info-light)] text-[var(--info)] border-[var(--info)]"
-      case "delivered":
-        return "bg-[var(--purple-light)] text-[var(--purple)] border-[var(--purple)]"
-      default:
-        return "bg-muted text-muted-foreground border-muted"
-    }
-  }
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
-  }
+export default async function OrdersPage() {
+  const user = await getCurrentUser()
 
   if (!user) {
-    return null
+    redirect("/login")
   }
+
+  const orders = await getUserOrders(user.id)
 
   return (
     <div className="min-h-screen bg-background">

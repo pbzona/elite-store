@@ -1,43 +1,14 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import type { Category } from "@/lib/products"
+import { getCategories } from "@/lib/products"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { Folder, ArrowRight } from "lucide-react"
 import { Icon } from "@/lib/icons"
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("/api/categories")
-      const data = await response.json()
-      setCategories(data)
-    } catch (error) {
-      console.error("Failed to fetch categories:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
-        </div>
-      </div>
-    )
-  }
+export default async function CategoriesPage() {
+  // Fetch categories server-side
+  const categories = await getCategories()
 
   return (
     <div className="min-h-screen bg-background">

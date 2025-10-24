@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
+import { tracer } from "@/lib/tracing"
 
 export async function GET() {
+  const span = tracer.startSpan('api.auth.me')
+
   try {
     const user = await getCurrentUser()
 
@@ -13,5 +16,7 @@ export async function GET() {
   } catch (error) {
     console.error("Auth check error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } finally {
+    span.end()
   }
 }
