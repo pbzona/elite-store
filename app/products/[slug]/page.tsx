@@ -1,14 +1,14 @@
-import type { Product } from "@/lib/products"
-import { getProductBySlug } from "@/lib/products"
 import { Header } from "@/components/layout/header"
-import { Button } from "@/components/ui/button"
+import { AddToCartButton } from "@/components/product/add-to-cart-button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { AddToCartButton } from "@/components/product/add-to-cart-button"
-import Link from "next/link"
-import { ArrowLeft, Heart, Share2 } from "lucide-react"
 import { Icon } from "@/lib/icons"
+import { getProductBySlug } from "@/lib/products"
+import { tracer } from "@/lib/tracing"
+import { ArrowLeft, Heart, Share2 } from "lucide-react"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 interface ProductPageProps {
@@ -18,10 +18,20 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const product = await getProductBySlug(slug)
+  const span = tracer.startSpan('products.getProductBySlug', {
+    attributes: {
+      'product.slug': slug,
+    }
+  })
 
   if (!product) {
+    span.setAttributes({ 'product.found': false })
+    span.end()
     notFound()
   }
+
+  span.setAttributes({ 'product.found': true })
+  span.end()
 
   const rgbColor = `rgb(${product.r}, ${product.g}, ${product.b})`
 
