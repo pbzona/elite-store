@@ -11,7 +11,6 @@ let pool: Pool | null = null
 try {
   pool = new Pool({ connectionString })
   db = drizzle(pool, { schema })
-  console.log("Database connected successfully")
 } catch (error) {
   console.warn("Database connection failed, will use mock data:", error)
   db = null
