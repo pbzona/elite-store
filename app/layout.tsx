@@ -7,16 +7,19 @@ import { Inter, JetBrains_Mono } from "next/font/google"
 import type React from "react"
 import "./globals.css"
 
+// Optimize font loading - only load needed weights
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  weight: ["400", "500", "600", "700"], // Specify only used weights
 })
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
+  weight: ["400", "500", "600"], // Mono font weights
 })
 
 export const metadata: Metadata = {
