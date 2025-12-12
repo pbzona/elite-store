@@ -13,7 +13,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Category not found" }, { status: 404 })
     }
 
-    return NextResponse.json(category)
+    return NextResponse.json(category, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+      },
+    })
   } catch (error) {
     console.error("Category API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

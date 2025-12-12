@@ -7,7 +7,11 @@ export async function GET() {
 
   try {
     const categories = await getCategories()
-    return NextResponse.json(categories)
+    return NextResponse.json(categories, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+      },
+    })
   } catch (error) {
     console.error("Categories API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

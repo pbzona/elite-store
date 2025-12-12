@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
       search: search || undefined,
     })
 
-    return NextResponse.json(products)
+    return NextResponse.json(products, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1800',
+      },
+    })
   } catch (error) {
     console.error("Products API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
