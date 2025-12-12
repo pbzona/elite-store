@@ -1,4 +1,4 @@
-import { getCategoryBySlug, getProducts } from "@/lib/products"
+import { getCategoryBySlug, getProducts, getCategories } from "@/lib/products"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,15 @@ import { notFound } from "next/navigation"
 
 // Revalidate category pages every 30 minutes
 export const revalidate = 1800
+
+// Generate static params for all categories at build time
+export async function generateStaticParams() {
+  const categories = await getCategories()
+  
+  return categories.map((category) => ({
+    slug: category.slug,
+  }))
+}
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>

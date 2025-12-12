@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Icon } from "@/lib/icons"
-import { getProductBySlug } from "@/lib/products"
+import { getProductBySlug, getProducts } from "@/lib/products"
 import { tracer } from "@/lib/tracing"
 import { ArrowLeft, Heart, Share2 } from "lucide-react"
 import Link from "next/link"
@@ -13,6 +13,15 @@ import { notFound } from "next/navigation"
 
 // Revalidate product pages every 10 minutes
 export const revalidate = 600
+
+// Generate static params for featured products at build time
+export async function generateStaticParams() {
+  const products = await getProducts({ featured: true })
+  
+  return products.map((product) => ({
+    slug: product.slug,
+  }))
+}
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
