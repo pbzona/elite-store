@@ -15,6 +15,13 @@
       "when": 1761104975128,
       "tag": "0001_nasty_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765577343123,
+      "tag": "0002_brief_timeslip",
+      "breakpoints": true
     }
   ]
 }

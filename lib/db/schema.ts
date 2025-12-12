@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm"
-import { boolean, decimal, integer, pgTable, serial, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
+import { boolean, decimal, index, integer, pgTable, serial, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
 
 // Users table with RGB affinity values
 export const users = pgTable("users", {
@@ -26,7 +26,10 @@ export const categories = pgTable("categories", {
   icon: varchar("icon", { length: 50 }), // Lucide icon name
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
+}, (table) => ({
+  // Index for slug lookups (used in /categories/[slug])
+  slugIdx: index("categories_slug_idx").on(table.slug),
+}))
 
 // Products table with RGB values
 export const products = pgTable("products", {
@@ -52,7 +55,19 @@ export const products = pgTable("products", {
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
+}, (table) => ({
+  // Index for slug lookups (used in /products/[slug])
+  slugIdx: index("products_slug_idx").on(table.slug),
+  // Index for category filtering
+  categoryIdIdx: index("products_category_id_idx").on(table.categoryId),
+  // Index for featured products
+  featuredIdx: index("products_featured_idx").on(table.featured),
+  // Index for active products
+  activeIdx: index("products_active_idx").on(table.active),
+  // Composite index for common query patterns
+  activeFeaturedIdx: index("products_active_featured_idx").on(table.active, table.featured),
+  activeCategoryIdx: index("products_active_category_idx").on(table.active, table.categoryId),
+}))
 
 // Product images table
 export const productImages = pgTable("product_images", {
@@ -64,7 +79,10 @@ export const productImages = pgTable("product_images", {
   altText: varchar("alt_text", { length: 200 }),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-})
+}, (table) => ({
+  // Index for product image lookups
+  productIdIdx: index("product_images_product_id_idx").on(table.productId),
+}))
 
 // Carts table
 export const carts = pgTable("carts", {
