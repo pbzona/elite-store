@@ -372,12 +372,18 @@ export async function getProducts(options?: {
   limit?: number
   offset?: number
   search?: string
+  sortBy?: "newest" | "price_low" | "price_high" | "name"
+  minPrice?: number
+  maxPrice?: number
 }): Promise<Product[]> {
   const span = tracer.startSpan('products.getProducts', {
     attributes: {
       'filter.categoryId': options?.categoryId,
       'filter.featured': options?.featured,
       'filter.search': options?.search,
+      'filter.sortBy': options?.sortBy,
+      'filter.minPrice': options?.minPrice,
+      'filter.maxPrice': options?.maxPrice,
       'pagination.limit': options?.limit,
       'pagination.offset': options?.offset,
     }
@@ -415,7 +421,23 @@ export async function getProducts(options?: {
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(and(...conditions))
-      .orderBy(desc(products.createdAt))
+
+    // Apply sorting
+    switch (options?.sortBy) {
+      case "price_low":
+        query.orderBy(asc(products.price))
+        break
+      case "price_high":
+        query.orderBy(desc(products.price))
+        break
+      case "name":
+        query.orderBy(asc(products.name))
+        break
+      case "newest":
+      default:
+        query.orderBy(desc(products.createdAt))
+        break
+    }
 
     if (options?.limit) {
       query.limit(options.limit)
@@ -597,6 +619,9 @@ function getMockProducts(options?: {
   limit?: number
   offset?: number
   search?: string
+  sortBy?: "newest" | "price_low" | "price_high" | "name"
+  minPrice?: number
+  maxPrice?: number
 }): Product[] {
   let filteredProducts = mockProducts.filter((product) => product.active)
 
@@ -614,6 +639,33 @@ function getMockProducts(options?: {
       (product) =>
         product.name.toLowerCase().includes(searchLower) || product.description.toLowerCase().includes(searchLower),
     )
+  }
+
+  // Filter by price range
+  if (options?.minPrice !== undefined || options?.maxPrice !== undefined) {
+    filteredProducts = filteredProducts.filter((product) => {
+      const price = Number.parseFloat(product.price)
+      const min = options?.minPrice ?? 0
+      const max = options?.maxPrice ?? Number.POSITIVE_INFINITY
+      return price >= min && price <= max
+    })
+  }
+
+  // Apply sorting
+  switch (options?.sortBy) {
+    case "price_low":
+      filteredProducts.sort((a, b) => Number.parseFloat(a.price) - Number.parseFloat(b.price))
+      break
+    case "price_high":
+      filteredProducts.sort((a, b) => Number.parseFloat(b.price) - Number.parseFloat(a.price))
+      break
+    case "name":
+      filteredProducts.sort((a, b) => a.name.localeCompare(b.name))
+      break
+    case "newest":
+    default:
+      filteredProducts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      break
   }
 
   if (options?.offset) {
