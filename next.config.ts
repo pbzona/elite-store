@@ -14,4 +14,9 @@ const nextConfig: NextConfig = {
   // cacheComponents: true,
 };
 
-export default nextConfig;
+// Bundle analyzer - run with: ANALYZE=true pnpm build
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+export default withBundleAnalyzer(nextConfig);
