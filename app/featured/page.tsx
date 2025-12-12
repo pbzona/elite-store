@@ -1,15 +1,24 @@
-import type { Product } from "@/lib/products"
 import { getProducts } from "@/lib/products"
-import { FeaturedProductsClient } from "@/components/product/featured-products-client"
 import { Header } from "@/components/layout/header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ProductGrid } from "@/components/product/product-grid"
+import { ProductSortFilter } from "@/components/product/product-sort-filter"
 import Link from "next/link"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Star } from "lucide-react"
 
-export default async function FeaturedPage() {
-  // Fetch featured products server-side
-  const products = await getProducts({ featured: true })
+interface FeaturedPageProps {
+  searchParams: Promise<{
+    sortBy?: "newest" | "price_low" | "price_high" | "name"
+  }>
+}
+
+export default async function FeaturedPage({ searchParams }: FeaturedPageProps) {
+  const params = await searchParams
+  const sortBy = params.sortBy || "newest"
+
+  // Fetch featured products with server-side sorting
+  const products = await getProducts({ featured: true, sortBy })
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,11 +37,36 @@ export default async function FeaturedPage() {
           </p>
         </div>
 
-        {/* Products Section with Client-Side Sorting */}
-        <FeaturedProductsClient initialProducts={products} />
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-6">
+          <div className="flex items-center gap-4">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Star className="h-3 w-3" />
+              {products.length} featured {products.length === 1 ? "product" : "products"}
+            </Badge>
+          </div>
+
+          <ProductSortFilter />
+        </div>
+
+        {/* Products Grid */}
+        {products.length === 0 ? (
+          <div className="text-center py-12">
+            <Star className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+            <h3 className="text-xl font-semibold mb-4">No featured products yet</h3>
+            <p className="text-muted-foreground mb-8">
+              Check back later for our curated selection of featured products.
+            </p>
+            <Button asChild>
+              <Link href="/products">Browse All Products</Link>
+            </Button>
+          </div>
+        ) : (
+          <ProductGrid products={products} />
+        )}
 
         {/* Call to Action */}
-        {products && products.length > 0 && (
+        {products.length > 0 && (
           <div className="text-center mt-16 p-8 rounded-lg bg-gradient-to-r from-[var(--brand-primary)]/10 to-[var(--brand-primary-hover)]/10 border border-[var(--brand-primary)]/20">
             <h2 className="text-2xl font-bold mb-4">Discover More</h2>
             <p className="text-muted-foreground mb-6">Explore our complete collection of premium products</p>
