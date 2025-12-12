@@ -9,6 +9,9 @@ import { ArrowLeft } from "lucide-react"
 import { Icon } from "@/lib/icons"
 import { notFound } from "next/navigation"
 
+// Revalidate category pages every 30 minutes
+export const revalidate = 1800
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>
   searchParams: Promise<{

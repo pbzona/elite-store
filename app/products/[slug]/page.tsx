@@ -11,6 +11,9 @@ import { ArrowLeft, Heart, Share2 } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+// Revalidate product pages every 10 minutes
+export const revalidate = 600
+
 interface ProductPageProps {
   params: Promise<{ slug: string }>
 }

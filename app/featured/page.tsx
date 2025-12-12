@@ -7,6 +7,9 @@ import { ProductSortFilter } from "@/components/product/product-sort-filter"
 import Link from "next/link"
 import { Sparkles, Star } from "lucide-react"
 
+// Revalidate featured page every 30 minutes
+export const revalidate = 1800
+
 interface FeaturedPageProps {
   searchParams: Promise<{
     sortBy?: "newest" | "price_low" | "price_high" | "name"

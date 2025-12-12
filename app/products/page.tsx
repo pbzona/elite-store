@@ -1,9 +1,11 @@
-import type { Product, Category } from "@/lib/products"
 import { getProducts, getCategories } from "@/lib/products"
 import { ProductGrid } from "@/components/product/product-grid"
 import { Header } from "@/components/layout/header"
 import { Badge } from "@/components/ui/badge"
 import { CategoryFilter } from "@/components/product/category-filter"
+
+// Revalidate products page every 10 minutes
+export const revalidate = 600
 
 interface ProductsPageProps {
   searchParams: Promise<{ search?: string; categoryId?: string }>

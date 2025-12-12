@@ -1,10 +1,12 @@
-import type { Category } from "@/lib/products"
 import { getCategories } from "@/lib/products"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { Folder, ArrowRight } from "lucide-react"
 import { Icon } from "@/lib/icons"
+
+// Revalidate categories page every 30 minutes
+export const revalidate = 1800
 
 export default async function CategoriesPage() {
   // Fetch categories server-side

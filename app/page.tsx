@@ -8,6 +8,9 @@ import { tracer } from "@/lib/tracing"
 import { ArrowRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 
+// Revalidate home page every hour
+export const revalidate = 3600
+
 export default async function HomePage() {
   // Fetch data server-side
   const featuredProducts = await getProducts({ featured: true, limit: 8 })
