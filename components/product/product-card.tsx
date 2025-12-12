@@ -1,40 +1,17 @@
-"use client"
-
-import type React from "react"
-
 import type { Product } from "@/lib/products"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useCart } from "@/hooks/use-cart"
-import { toast } from "sonner"
 import Link from "next/link"
-import { ShoppingCart } from "lucide-react"
 import { Icon } from "@/lib/icons"
+import { ProductCardAddToCart } from "./product-card-add-to-cart"
 
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart()
   const rgbColor = `rgb(${product.r}, ${product.g}, ${product.b})`
-
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    try {
-      await addToCart(product.id)
-      toast.success("Added to cart", {
-        description: `${product.name} has been added to your cart.`,
-      })
-    } catch (error) {
-      toast.error("Error", {
-        description: "Failed to add item to cart.",
-      })
-    }
-  }
 
   return (
     <Card className="group overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:border-border hover:bg-card/80 hover:shadow-lg hover:shadow-black/20">
@@ -91,9 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
               >
                 <span>Shop Now</span>
               </Button>
-              <Button size="sm" variant="outline" className="px-3 bg-transparent" onClick={handleAddToCart}>
-                <ShoppingCart className="h-4 w-4" />
-              </Button>
+              <ProductCardAddToCart productId={product.id} productName={product.name} />
             </div>
           </div>
         </CardContent>
