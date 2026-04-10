@@ -1,37 +1,40 @@
-// Direct imports of only the icons used in the app to avoid loading 454+ unused icons
-import PackageIcon from "lucide-react/dist/esm/icons/package"
-import ShoppingCartIcon from "lucide-react/dist/esm/icons/shopping-cart"
-import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
-import HeartIcon from "lucide-react/dist/esm/icons/heart"
-import Share2Icon from "lucide-react/dist/esm/icons/share-2"
-import StarIcon from "lucide-react/dist/esm/icons/star"
-import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
-import FolderIcon from "lucide-react/dist/esm/icons/folder"
-import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
-import FilterIcon from "lucide-react/dist/esm/icons/filter"
-import SearchIcon from "lucide-react/dist/esm/icons/search"
-import MenuIcon from "lucide-react/dist/esm/icons/menu"
-import UserIcon from "lucide-react/dist/esm/icons/user"
-import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
-import PlusIcon from "lucide-react/dist/esm/icons/plus"
-import MinusIcon from "lucide-react/dist/esm/icons/minus"
-import XIcon from "lucide-react/dist/esm/icons/x"
-import CalendarIcon from "lucide-react/dist/esm/icons/calendar"
-import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
-import CheckCircleIcon from "lucide-react/dist/esm/icons/check-circle"
-import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
-import SaveIcon from "lucide-react/dist/esm/icons/save"
-import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
-import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
-import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
-import CircleIcon from "lucide-react/dist/esm/icons/circle"
-import MoonIcon from "lucide-react/dist/esm/icons/moon"
-import SunIcon from "lucide-react/dist/esm/icons/sun"
-import PaletteIcon from "lucide-react/dist/esm/icons/palette"
-import type { LucideProps } from "lucide-react"
+// Named imports from lucide-react main module
+// The package has "sideEffects": false so modern bundlers will tree-shake unused exports
+import {
+  Package as PackageIcon,
+  ShoppingCart as ShoppingCartIcon,
+  ShoppingBag as ShoppingBagIcon,
+  Heart as HeartIcon,
+  Share2 as Share2Icon,
+  Star as StarIcon,
+  Sparkles as SparklesIcon,
+  Folder as FolderIcon,
+  ArrowRight as ArrowRightIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Filter as FilterIcon,
+  Search as SearchIcon,
+  Menu as MenuIcon,
+  User as UserIcon,
+  LogOut as LogOutIcon,
+  Plus as PlusIcon,
+  Minus as MinusIcon,
+  X as XIcon,
+  Calendar as CalendarIcon,
+  CreditCard as CreditCardIcon,
+  CheckCircle as CheckCircleIcon,
+  MapPin as MapPinIcon,
+  Save as SaveIcon,
+  Trash2 as Trash2Icon,
+  Check as CheckIcon,
+  ChevronDown as ChevronDownIcon,
+  ChevronUp as ChevronUpIcon,
+  ChevronRight as ChevronRightIcon,
+  Circle as CircleIcon,
+  Moon as MoonIcon,
+  Sun as SunIcon,
+  Palette as PaletteIcon,
+  type LucideProps,
+} from "lucide-react"
 
 // Create a registry mapping icon names to components
 const iconRegistry = {
