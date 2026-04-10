@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ProductGrid } from "@/components/product/product-grid"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -73,19 +73,21 @@ export function DiscoveryLabClient({ initialRecommendations, initialColor, initi
     return () => window.clearInterval(timer)
   }, [fetchRecommendations, liveMode])
 
-  const syntheticWorkload = recommendations.flatMap((recommendation) =>
-    Array.from({ length: 70 }, () => recommendation),
-  )
+  const compatibilityLoadScore = useMemo(() => {
+    const syntheticWorkload = recommendations.flatMap((recommendation) =>
+      Array.from({ length: 70 }, () => recommendation),
+    )
 
-  const compatibilityLoadScore = syntheticWorkload.reduce((outerTotal, sourceItem, sourceIndex) => {
-    let localTotal = 0
+    return syntheticWorkload.reduce((outerTotal, sourceItem, sourceIndex) => {
+      let localTotal = 0
 
-    for (let targetIndex = 0; targetIndex < syntheticWorkload.length; targetIndex += 1) {
-      localTotal += Math.abs(sourceItem.affinityScore - syntheticWorkload[targetIndex].affinityScore) * (sourceIndex + 1)
-    }
+      for (let targetIndex = 0; targetIndex < syntheticWorkload.length; targetIndex += 1) {
+        localTotal += Math.abs(sourceItem.affinityScore - syntheticWorkload[targetIndex].affinityScore) * (sourceIndex + 1)
+      }
 
-    return outerTotal + localTotal
-  }, 0)
+      return outerTotal + localTotal
+    }, 0)
+  }, [recommendations])
 
   const targetColor = `rgb(${color.r}, ${color.g}, ${color.b})`
 
