@@ -11,13 +11,16 @@ import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 
 export default async function CheckoutPage() {
-  const user = await getCurrentUser()
+  // Parallelize independent async operations
+  const [user, cookieStore] = await Promise.all([
+    getCurrentUser(),
+    cookies()
+  ])
 
   if (!user) {
     redirect("/login?redirect=/checkout")
   }
 
-  const cookieStore = await cookies()
   const sessionId = cookieStore.get("cart-session-id")?.value
 
   let cart = null

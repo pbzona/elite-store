@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import type { Product, Category } from "@/lib/products"
 import { ProductGrid } from "@/components/product/product-grid"
 import { Badge } from "@/components/ui/badge"
@@ -27,18 +27,18 @@ export function SearchFiltersClient({ initialProducts, categories, query }: Sear
   })
   const [showFilters, setShowFilters] = useState(false)
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = useCallback((key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
-  }
+  }, [])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       category: "all",
       sortBy: "newest",
       minPrice: "",
       maxPrice: "",
     })
-  }
+  }, [])
 
   const filteredAndSortedProducts = useMemo(() => {
     let products = [...initialProducts]

@@ -12,8 +12,11 @@ import Link from "next/link"
 import { cookies } from "next/headers"
 
 export default async function CartPage() {
-  const user = await getCurrentUser()
-  const cookieStore = await cookies()
+  // Parallelize independent async operations
+  const [user, cookieStore] = await Promise.all([
+    getCurrentUser(),
+    cookies()
+  ])
   const sessionId = cookieStore.get("cart-session-id")?.value
 
   let cart = null

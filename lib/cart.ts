@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { cartItems, carts, db, productImages, products } from "@/lib/db"
 import { tracer } from "@/lib/tracing"
 import { SpanStatusCode } from "@opentelemetry/api"
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, inArray } from "drizzle-orm"
 
 export interface CartItem {
   id: number
@@ -82,7 +82,29 @@ export async function getCart(cartId: string): Promise<Cart | null> {
   })
 
   try {
-    const [cart] = await db!.select().from(carts).where(eq(carts.id, cartId))
+    // Start both cart and items queries in parallel
+    const cartPromise = db!.select().from(carts).where(eq(carts.id, cartId))
+
+    const itemsSpan = tracer.startSpan('cart.fetchItems', {
+      attributes: { 'cart.id': cartId }
+    })
+    const itemsPromise = db!
+      .select({
+        cartItem: cartItems,
+        product: products,
+      })
+      .from(cartItems)
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.cartId, cartId))
+      .orderBy(desc(cartItems.createdAt))
+
+    // Await both in parallel
+    const [[cart], items] = await Promise.all([cartPromise, itemsPromise])
+
+    itemsSpan.setAttributes({
+      'db.result_count': items.length
+    })
+    itemsSpan.end()
 
     if (!cart) {
       span.setAttributes({ 'cart.found': false })
@@ -92,36 +114,26 @@ export async function getCart(cartId: string): Promise<Cart | null> {
 
     span.setAttributes({ 'cart.found': true })
 
-    // Get cart items with product details
-    const itemsSpan = tracer.startSpan('cart.fetchItems', {
-      attributes: { 'cart.id': cartId }
-    })
-    const items = await db!
-      .select({
-        cartItem: cartItems,
-        product: products,
-      })
-      .from(cartItems)
-      .innerJoin(products, eq(cartItems.productId, products.id))
-      .where(eq(cartItems.cartId, cartId))
-      .orderBy(desc(cartItems.createdAt))
-    itemsSpan.setAttributes({
-      'db.result_count': items.length
-    })
-    itemsSpan.end()
-
-    // Get product images
+    // Batch fetch all product images at once using inArray
     const productIds = items.map((item) => item.product.id)
     const images =
       productIds.length > 0
-        ? await db!.select().from(productImages).where(eq(productImages.productId, productIds[0])) // This is a simplified version
+        ? await db!.select().from(productImages).where(inArray(productImages.productId, productIds))
         : []
 
+    // Group images by productId for efficient lookup
+    const imagesByProduct = images.reduce((acc, img) => {
+      if (!acc[img.productId]) acc[img.productId] = []
+      acc[img.productId].push(img)
+      return acc
+    }, {} as Record<number, typeof images>)
+
+    // Map cart items with images
     const cartItemsWithProducts: CartItem[] = items.map(({ cartItem, product }) => ({
       ...cartItem,
       product: {
         ...product,
-        images: images.filter((img) => img.productId === product.id).slice(0, 1),
+        images: imagesByProduct[product.id] || [],
       },
     }))
 

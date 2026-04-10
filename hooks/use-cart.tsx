@@ -23,14 +23,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
 
-  const getSessionId = useCallback(() => {
+  // Inline helper to get session ID (avoids circular dependency)
+  const getSessionId = () => {
     let sessionId = localStorage.getItem("cart-session-id")
     if (!sessionId) {
       sessionId = crypto.randomUUID()
       localStorage.setItem("cart-session-id", sessionId)
     }
     return sessionId
-  }, [])
+  }
 
   const refreshCart = useCallback(async () => {
     try {
@@ -50,13 +51,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [user, getSessionId])
+  }, [user]) // Only depends on user now
 
   useEffect(() => {
     refreshCart()
   }, [refreshCart])
 
-  const addToCart = async (productId: number, quantity = 1) => {
+  const addToCart = useCallback(async (productId: number, quantity = 1) => {
     try {
       const sessionId = user ? undefined : getSessionId()
       const response = await fetch("/api/cart/add", {
@@ -71,9 +72,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Failed to add to cart:", error)
     }
-  }
+  }, [user, refreshCart])
 
-  const updateQuantity = async (productId: number, quantity: number) => {
+  const updateQuantity = useCallback(async (productId: number, quantity: number) => {
     try {
       const sessionId = user ? undefined : getSessionId()
       const response = await fetch("/api/cart/update", {
@@ -88,9 +89,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Failed to update cart:", error)
     }
-  }
+  }, [user, refreshCart])
 
-  const removeFromCart = async (productId: number) => {
+  const removeFromCart = useCallback(async (productId: number) => {
     try {
       const sessionId = user ? undefined : getSessionId()
       const response = await fetch("/api/cart/remove", {
@@ -105,9 +106,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Failed to remove from cart:", error)
     }
-  }
+  }, [user, refreshCart])
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     try {
       const sessionId = user ? undefined : getSessionId()
       const response = await fetch("/api/cart/clear", {
@@ -122,7 +123,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Failed to clear cart:", error)
     }
-  }
+  }, [user, refreshCart])
 
   return (
     <CartContext.Provider

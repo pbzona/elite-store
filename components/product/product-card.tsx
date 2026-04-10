@@ -1,3 +1,4 @@
+import { memo } from "react"
 import type { Product } from "@/lib/products"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,7 @@ interface ProductCardProps {
   product: Product
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({ product }: ProductCardProps) {
   const rgbColor = `rgb(${product.r}, ${product.g}, ${product.b})`
 
   return (
@@ -75,4 +76,4 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
     </Card>
   )
-}
+})
