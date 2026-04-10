@@ -31,6 +31,9 @@ export function Header() {
             <Link href="/featured" className="text-sm font-medium hover:text-[var(--brand-primary)] transition-colors">
               Featured
             </Link>
+            <Link href="/discover" className="text-sm font-medium hover:text-[var(--brand-primary)] transition-colors">
+              Discover
+            </Link>
           </nav>
 
           {/* Search Bar - Desktop Only */}

@@ -48,6 +48,13 @@ export function HeaderMobileMenu() {
               >
                 Featured
               </Link>
+              <Link
+                href="/discover"
+                className="text-sm font-medium hover:text-[var(--brand-primary)] transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Discover
+              </Link>
             </nav>
 
             {/* Mobile Auth */}
