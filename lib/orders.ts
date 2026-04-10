@@ -122,7 +122,8 @@ export async function createOrder(cart: Cart, checkoutData: CheckoutData): Promi
       price: item.product.price,
     }))
 
-    await db!.insert(orderItems).values(orderItemsData)
+    // Start items insert (non-blocking)
+    const itemsPromise = db!.insert(orderItems).values(orderItemsData)
 
     const paymentSpan = tracer.startSpan('orders.simulatePayment', {
       attributes: { 'payment.simulated': true }
@@ -130,8 +131,17 @@ export async function createOrder(cart: Cart, checkoutData: CheckoutData): Promi
 
     const delay = Math.floor(Math.random() * 1000 + 1000);
 
-    // Mock payment processing
-    await new Promise((resolve) => setTimeout(resolve, delay)) // Simulate processing time
+    // Mock payment processing - run in parallel with items insert
+    const paymentPromise = new Promise((resolve) => setTimeout(resolve, delay))
+
+    // Wait for both payment simulation and items insert
+    await Promise.all([itemsPromise, paymentPromise])
+
+    paymentSpan.setAttributes({
+      'payment.duration_ms': delay,
+      'payment.status': 'success'
+    })
+    paymentSpan.end()
 
     // Update order status to completed (mock successful payment)
     await db!
@@ -142,12 +152,6 @@ export async function createOrder(cart: Cart, checkoutData: CheckoutData): Promi
         updatedAt: new Date(),
       })
       .where(eq(orders.id, order.id))
-
-    paymentSpan.setAttributes({
-      'payment.duration_ms': delay,
-      'payment.status': 'success'
-    })
-    paymentSpan.end()
 
     span.setAttributes({
       'order.id': order.id,
@@ -165,38 +169,71 @@ export async function createOrder(cart: Cart, checkoutData: CheckoutData): Promi
 }
 
 export async function getOrderById(orderId: string): Promise<Order> {
-  const [order] = await db!.select().from(orders).where(eq(orders.id, orderId))
-
-  if (!order) {
-    throw new Error("Order not found")
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error("User must be authenticated")
   }
 
-  // Get order items with product details
-  const items = await db!
-    .select({
-      orderItem: orderItems,
-      product: products,
+  const span = tracer.startSpan('orders.getOrderById', {
+    attributes: { 'order.id': orderId }
+  })
+
+  try {
+    // Start both order and items queries in parallel
+    const orderPromise = db!.select().from(orders).where(eq(orders.id, orderId))
+
+    const itemsPromise = db!
+      .select({
+        orderItem: orderItems,
+        product: products,
+      })
+      .from(orderItems)
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .where(eq(orderItems.orderId, orderId))
+
+    // Await both in parallel
+    const [[order], items] = await Promise.all([orderPromise, itemsPromise])
+
+    if (!order) {
+      span.setStatus({ code: SpanStatusCode.ERROR })
+      span.end()
+      throw new Error("Order not found")
+    }
+
+    // Verify order belongs to user
+    if (order.userId !== user.id) {
+      span.setStatus({ code: SpanStatusCode.ERROR })
+      span.end()
+      throw new Error("Order not found")
+    }
+
+    const orderItemsWithProducts: OrderItem[] = items.map(({ orderItem, product }) => ({
+      ...orderItem,
+      product: {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        r: product.r,
+        g: product.g,
+        b: product.b,
+        icon: product.icon ?? null
+      },
+    }))
+
+    span.setAttributes({
+      'result.item_count': orderItemsWithProducts.length,
     })
-    .from(orderItems)
-    .innerJoin(products, eq(orderItems.productId, products.id))
-    .where(eq(orderItems.orderId, orderId))
+    span.end()
 
-  const orderItemsWithProducts: OrderItem[] = items.map(({ orderItem, product }) => ({
-    ...orderItem,
-    product: {
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      r: product.r,
-      g: product.g,
-      b: product.b,
-      icon: product.icon ?? null
-    },
-  }))
-
-  return {
-    ...order,
-    items: orderItemsWithProducts,
+    return {
+      ...order,
+      items: orderItemsWithProducts,
+    }
+  } catch (error) {
+    span.recordException?.(error as Error)
+    span.setStatus({ code: SpanStatusCode.ERROR })
+    span.end()
+    throw error
   }
 }
 
