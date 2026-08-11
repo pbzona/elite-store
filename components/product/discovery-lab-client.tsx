@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ProductGrid } from "@/components/product/product-grid"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,9 @@ interface DiscoveryLabClientProps {
   initialColor: RGBColor
   initialMaxPrice: number
 }
+
+const LIVE_MODE_INTERVAL_MS = 30_000
+const CONTROL_DEBOUNCE_MS = 300
 
 const matchLabelStyles: Record<RecommendedProduct["matchLabel"], string> = {
   perfect: "bg-[var(--success-light)] text-[var(--success)] border-[var(--success)]/40",
@@ -28,9 +31,14 @@ export function DiscoveryLabClient({ initialRecommendations, initialColor, initi
   const [recommendations, setRecommendations] = useState<RecommendedProduct[]>(initialRecommendations)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [liveMode, setLiveMode] = useState(true)
+  const [liveMode, setLiveMode] = useState(false)
+  const activeRequest = useRef<AbortController | null>(null)
 
   const fetchRecommendations = useCallback(async () => {
+    activeRequest.current?.abort()
+    const controller = new AbortController()
+    activeRequest.current = controller
+
     try {
       setLoading(true)
       setError(null)
@@ -44,7 +52,7 @@ export function DiscoveryLabClient({ initialRecommendations, initialColor, initi
         search,
       })
 
-      const response = await fetch(`/api/recommendations?${query.toString()}`)
+      const response = await fetch(`/api/recommendations?${query.toString()}`, { signal: controller.signal })
       if (!response.ok) {
         throw new Error("Failed to refresh recommendations")
       }
@@ -52,42 +60,50 @@ export function DiscoveryLabClient({ initialRecommendations, initialColor, initi
       const data: { recommendations: RecommendedProduct[] } = await response.json()
       setRecommendations(data.recommendations)
     } catch (requestError) {
+      if (controller.signal.aborted) return
+
       console.error("Recommendation refresh failed:", requestError)
       setError("Could not refresh recommendations right now.")
     } finally {
-      setLoading(false)
+      if (activeRequest.current === controller) {
+        activeRequest.current = null
+        setLoading(false)
+      }
     }
   }, [color.r, color.g, color.b, maxPrice, search])
 
   useEffect(() => {
-    void fetchRecommendations()
+    const timer = window.setTimeout(() => {
+      void fetchRecommendations()
+    }, CONTROL_DEBOUNCE_MS)
+
+    return () => window.clearTimeout(timer)
   }, [fetchRecommendations])
+
+  useEffect(() => () => activeRequest.current?.abort(), [])
 
   useEffect(() => {
     if (!liveMode) return
 
     const timer = window.setInterval(() => {
       void fetchRecommendations()
-    }, 1200)
+    }, LIVE_MODE_INTERVAL_MS)
 
     return () => window.clearInterval(timer)
   }, [fetchRecommendations, liveMode])
 
-  const compatibilityLoadScore = useMemo(() => {
-    const syntheticWorkload = recommendations.flatMap((recommendation) =>
-      Array.from({ length: 70 }, () => recommendation),
-    )
+  const compatibilityLoadScore = useMemo(
+    () =>
+      recommendations.reduce((total, recommendation, index) => {
+        const spread = recommendations.reduce(
+          (sum, other) => sum + Math.abs(recommendation.affinityScore - other.affinityScore),
+          0,
+        )
 
-    return syntheticWorkload.reduce((outerTotal, sourceItem, sourceIndex) => {
-      let localTotal = 0
-
-      for (let targetIndex = 0; targetIndex < syntheticWorkload.length; targetIndex += 1) {
-        localTotal += Math.abs(sourceItem.affinityScore - syntheticWorkload[targetIndex].affinityScore) * (sourceIndex + 1)
-      }
-
-      return outerTotal + localTotal
-    }, 0)
-  }, [recommendations])
+        return total + spread * (index + 1)
+      }, 0),
+    [recommendations],
+  )
 
   const targetColor = `rgb(${color.r}, ${color.g}, ${color.b})`
 

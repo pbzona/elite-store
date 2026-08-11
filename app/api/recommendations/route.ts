@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getPersonalizedRecommendations } from "@/lib/recommendations"
 import { tracer } from "@/lib/tracing"
 
+const DEFAULT_LIMIT = 10
+const MAX_LIMIT = 50
+
 function parseChannel(value: string | null, fallback: number): number {
   if (value === null) return fallback
 
@@ -22,17 +25,20 @@ export async function GET(request: NextRequest) {
     const b = parseChannel(searchParams.get("b"), 128)
 
     const maxPriceParam = searchParams.get("maxPrice")
-    const maxPrice = maxPriceParam ? Number.parseFloat(maxPriceParam) : undefined
+    const parsedMaxPrice = maxPriceParam ? Number.parseFloat(maxPriceParam) : undefined
+    const maxPrice =
+      parsedMaxPrice === undefined || Number.isNaN(parsedMaxPrice) ? undefined : Math.max(0, parsedMaxPrice)
 
     const limitParam = searchParams.get("limit")
-    const limit = limitParam ? Number.parseInt(limitParam, 10) : 10
+    const parsedLimit = limitParam ? Number.parseInt(limitParam, 10) : DEFAULT_LIMIT
+    const limit = Number.isNaN(parsedLimit) ? DEFAULT_LIMIT : Math.max(1, Math.min(MAX_LIMIT, parsedLimit))
 
     const search = searchParams.get("search") || undefined
 
     const result = await getPersonalizedRecommendations({
       targetColor: { r, g, b },
-      maxPrice: Number.isNaN(maxPrice ?? Number.NaN) ? undefined : maxPrice,
-      limit: Number.isNaN(limit) ? 10 : limit,
+      maxPrice,
+      limit,
       search,
     })
 

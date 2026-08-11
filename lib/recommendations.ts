@@ -110,7 +110,7 @@ export async function getPersonalizedRecommendations(options: RecommendationOpti
         }
       })
       .sort((a, b) => b.affinityScore - a.affinityScore)
-      .slice(0, options.limit ?? 10)
+      .slice(0, Math.max(1, options.limit ?? 10))
 
     span.setAttributes({
       "recommendations.products.total": products.length,
