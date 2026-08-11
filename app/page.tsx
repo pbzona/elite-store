@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Icon } from "@/lib/icons"
 import { getCategories, getProducts } from "@/lib/products"
 import { tracer } from "@/lib/tracing"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight, Palette, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 // Revalidate home page every hour
@@ -56,6 +56,17 @@ export default async function HomePage() {
                   asChild
                 >
                   <Link href="/categories">Browse Categories</Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="px-8 py-3"
+                  asChild
+                >
+                  <Link href="/discover">
+                    Discover Matches
+                    <Palette className="ml-2 h-5 w-5" />
+                  </Link>
                 </Button>
               </div>
             </div>
